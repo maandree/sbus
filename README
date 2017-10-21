@@ -40,7 +40,7 @@ Protocol:
 
 		Messages of this type shall match the regular expression
 
-			 ^SUB \([^\x00]*\)\(\x00.*\)\?$
+			^SUB \([^\x00]*\)\(\x00.*\)\?$
 
 		where \1 is the routing key pattern, \2 is ignored.
 
@@ -52,7 +52,7 @@ Protocol:
 
 		Messages of this type shall match the regular expression
 
-			 ^UNSUB \([^\x00]*\)\(\x00.*\)\?$
+			^UNSUB \([^\x00]*\)\(\x00.*\)\?$
 
 		where \1 is the routing key pattern, \2 is ignored.
 
@@ -66,7 +66,7 @@ Protocol:
 
 		Messages of this type shall match the regular expression
 
-			 ^MSG \([^\x00]*\)\x00\(.*\)$
+			^MSG \([^\x00]*\)\x00\(.*\)$
 
 		where \1 is the routing key for the message and \2
 		is the message payload.
