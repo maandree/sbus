@@ -1,0 +1,72 @@
+sbus is simple message bus based on unix domain, sequenced-packet sockets.
+
+Features:
+	Support for multi-user buses.
+	No support state-keeping in clients.
+	Supports all send(2)/recv(2) flags.
+	Support for routing keys with wildcards.
+
+Non-features:
+	No IP or cluster support, should be implemented as a separate service.
+	No support for overly larged messages, should be implemented at application level.
+	No persistence support, should be implemented as a separate service.
+	No support for automatic unsubscriptions.
+	No support for reply-to keys, should be implemented at application level.
+	No support for shared queues, should be implemented as a separate service.
+
+Routing keys:
+	Routing keys are used to filter received messages. A routing key
+	may contain any byte, whoever there are two bytes with special
+	meaning: '*' and '.'. '*' should not be used in routin keys, but
+	only in routing key patterns, it matches until the next '.' or
+	end if there are not more '.'s. Additionally if a routing key
+	pattern ends with '.' that '.' will match to a '.' and any
+	subsequent byte. For example 'a.*.c.' will match 'a.b.c.' and
+	'a.b.c.d.e' but not 'a.b.c' or 'a.c.d'. And empty routiung key
+	pattern shall match everything.
+
+Protocol:
+	Communication is done over unix domain, sequenced-packet sockets.
+	Each packet is interpreted as a complete message. A packet cannot
+	contain multiple message, and a message cannot be split over
+	multiple packets. There are 3 types of messages:
+
+	Subscribe:
+		Send a routing key pattern to the server for the client.
+		The server shall send all messages with matching routing
+		keys to this client. The server shall store the key even
+		if there is already an identical routing key pattern
+		registered for the client.
+
+		Messages of this type shall match the regular expression
+
+			 ^SUB \([^\x00]*\)\(\x00.*\)\?$
+
+		where \1 is the routing key pattern, \2 is ignored.
+
+	Unsubscribe:
+		Tell the server to remove a routing key pattern for the
+		client. The server may choose to disconnect the client
+		if it sends a routing key pattern that is not registered
+		for the client.
+
+		Messages of this type shall match the regular expression
+
+			 ^UNSUB \([^\x00]*\)\(\x00.*\)\?$
+
+		where \1 is the routing key pattern, \2 is ignored.
+
+	Publish:
+		Publish a message on the bus. The server shall send a
+		copy of packet to all clients with a matching routing
+		key pattern, including the client that sent the packet
+		if and only if that client has a matching routing key
+		pattern. The server may not send a copy of the packet
+		to any clients without a matching routing key pattern.
+
+		Messages of this type shall match the regular expression
+
+			 ^MSG \([^\x00]*\)\x00\(.*\)$
+
+		where \1 is the routing key for the message and \2
+		is the message payload.
