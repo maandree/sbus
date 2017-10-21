@@ -33,6 +33,6 @@ int libsbus_subscribe(int fd, const char *pattern, char *buf);
 int libsbus_unsubscribe(int fd, const char *pattern, char *buf);
 int libsbus_publish(int fd, const char *key, const char *msg, size_t n, char *buf);
 ssize_t libsbuf_prepare_message(const char *key, char *buf, size_t *remaining);
-int libsbus_receive(int fd, char *buf, union libsbus_packet *packet);
+int libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet);
 
 #endif

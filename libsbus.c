@@ -60,12 +60,12 @@ libsbuf_prepare_message(const char *key, char *buf, size_t *remaining)
 }
 
 int
-libsbus_receive(int fd, char *buf, union libsbus_packet *packet)
+libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet)
 {
 	ssize_t r;
 	char *p;
 
-	r = recv(fd, buf, LIBSBUS_BUFFER_SIZE, 0);
+	r = recv(fd, buf, LIBSBUS_BUFFER_SIZE, flags);
 	if (r < 0)
 		return -1;
 
