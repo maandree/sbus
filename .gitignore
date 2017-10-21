@@ -5,4 +5,7 @@
 *.so
 *.su
 *.out
+*.pid
+*.sock
 /sbusd
+/test

@@ -6,10 +6,12 @@ LIB_MINOR = 0
 CONFIGFILE = config.mk
 include $(CONFIGFILE)
 
-all: sbusd libsbus.so libsbus.a
+all: sbusd libsbus.so libsbus.a test
 
 sbusd.o: arg.h
 libsbus.o: libsbus.h
+test.o: libsbus.h
+test: test.o libsbus.a
 
 libsbus.so: libsbus.o
 	$(CC) -shared -Wl,-soname,libsbus.so.$(LIB_MAJOR) -o $@ $^ $(LDFLAGS)
@@ -17,6 +19,9 @@ libsbus.so: libsbus.o
 libsbus.a: libsbus.o
 	$(AR) rc $@ $?
 	$(AR) -s $@
+
+check: test sbusd
+	./test
 
 install: sbusd libsbus.a libsbus.so
 	mkdir -p -- "$(DESTDIR)$(PREFIX)/bin"
@@ -38,6 +43,6 @@ uninstall:
 	-rm -rf -- "$(DESTDIR)$(PREFIX)/share/licenses/sbus"
 
 clean:
-	-rm -f -- sbusd *.o *.so *.a
+	-rm -f -- sbusd test *.o *.so *.a .test.sock .test.pid
 
-.PHONY: all install uninstall clean
+.PHONY: all check install uninstall clean

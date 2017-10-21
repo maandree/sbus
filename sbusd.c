@@ -41,6 +41,7 @@ static int had_client = 0;
 static struct sockaddr_un addr;
 static uid_t *users;
 static size_t nusers;
+static const char *pidfile = "/run/sbus.pid";
 
 static void
 usage(void)
@@ -66,7 +67,11 @@ static void
 sigexit(int signo)
 {
 	if (*addr.sun_path)
-		unlink(addr.sun_path);
+		if (unlink(addr.sun_path))
+			weprintf("unlink %s:", addr.sun_path);
+	if (pidfile)
+		if (unlink(pidfile))
+			weprintf("unlink %s:", pidfile);
 	exit(0);
 	(void) signo;
 }
@@ -281,7 +286,7 @@ print_address(void)
 	*p = '\0';
 
 	printf("/dev/unix/abstract/%s\n", buf);
-	if (ferror(stderr))
+	if (fflush(stdout) || ferror(stdout))
 		eprintf("failed print generated address:");
 }
 
@@ -299,7 +304,7 @@ make_socket(const char *address, int reuse, mode_t mode)
 
 	if (strstr(address, "/dev/fd/") == address) {
 		p = &address[sizeof("/dev/fd/") - 1];
-		if (isdigit(*p))
+		if (!isdigit(*p))
 			goto def;
 		errno = 0;
 		tmp = strtol(p, &a, 10);
@@ -391,7 +396,7 @@ bad_address:
 }
 
 static void
-daemonise(const char *pidfile)
+daemonise(void)
 {
 	pid_t pid;
 	int rw[2], status = 0, fd;
@@ -416,7 +421,7 @@ daemonise(const char *pidfile)
 				weprintf("signal SIGHUP SIG_IGN:");
 			if (signal(SIGINT, sigexit) == SIG_ERR)
 				weprintf("signal SIGINT <exit>:");
-			if (strcmp(pidfile, "/dev/null")) {
+			if (pidfile) {
 				pid = getpid();
 				fd = open(pidfile, O_WRONLY | O_CREAT | O_EXCL, 0644);
 				if (fd < 0)
@@ -471,7 +476,6 @@ main(int argc, char *argv[])
 {
 	struct epoll_event evs[32];
 	const char *address = "/run/sbus.socket";
-	const char *pidfile = "/run/sbus.pid";
 	int auto_close = 0;
 	int foreground = 0;
 	mode_t mode = 0700;
@@ -529,14 +533,17 @@ main(int argc, char *argv[])
 	umask(0);
 	server = make_socket(address, reuse_address, mode);
 	if (foreground) {
-		close(0);
-		close(1);
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
 		if (signal(SIGHUP, sigexit) == SIG_ERR)
 			weprintf("signal SIGHUP <exit>:");
 		if (signal(SIGINT, sigexit) == SIG_ERR)
 			weprintf("signal SIGINT <exit>:");
+		pidfile = NULL;
 	} else {
-		daemonise(pidfile);
+		if (!strcmp(pidfile, "/dev/null"))
+			pidfile = NULL;
+		daemonise();
 	}
 
 	if (nusers)
@@ -568,5 +575,5 @@ main(int argc, char *argv[])
 		}
 	}
 
-	return 0;
+	sigexit(0);
 }
