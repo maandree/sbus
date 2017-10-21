@@ -20,7 +20,7 @@ static pid_t pid;
 #define assert(e)\
 	(errno = 0, (e) ? 0 :\
 	 (fprintf(stderr, "FAILURE: %s; errno=%s; line=%i\n",\
-		  #e, strerror(errno), __LINE__), exit(1), 0))
+	          #e, strerror(errno), __LINE__), exit(1), 0))
 
 static void
 touch(const char *path)
@@ -337,8 +337,8 @@ main(void)
 
 	touch(".test.sock");
 	assert((pid = fork()) != -1);
+	alarm(1);
 	if (!pid) {
-		alarm(1);
 		pdeath();
 		fd = open("/dev/null", O_WRONLY);
 		if (fd >= 0 && fd != STDERR_FILENO)
