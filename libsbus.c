@@ -69,7 +69,7 @@ libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet)
 	if (r < 0)
 		return -1;
 
-	if (!strncmp(buf, "MSG ", 4)) {
+	if (r >= 4 && !strncmp(buf, "MSG ", 4)) {
 		p = memchr(buf, '\0', r);
 		if (!*p++)
 			goto unknown;
