@@ -66,8 +66,11 @@ libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet)
 	char *p;
 
 	r = recv(fd, buf, LIBSBUS_BUFFER_SIZE, flags);
-	if (r < 0)
+	if (r <= 0) {
+		if (!r)
+			errno = ECONNRESET;
 		return -1;
+	}
 
 	if (r >= 4 && !strncmp(buf, "MSG ", 4)) {
 		p = memchr(buf, '\0', r);
