@@ -5,7 +5,7 @@
 #include <string.h>
 
 int
-libsbus_subscribe(int fd, const char *pattern, char *buf)
+libsbus_subscribe(int fd, const char *pattern, int flags, char *buf)
 {
 	size_t n = strlen(pattern);
 	if (n + 4 > LIBSBUS_BUFFER_SIZE) {
@@ -14,11 +14,11 @@ libsbus_subscribe(int fd, const char *pattern, char *buf)
 	}
 	buf[0] = 'S', buf[1] = 'U', buf[2] = 'B', buf[3] = ' ';
 	memcpy(&buf[4], pattern, n);
-	return -(send(fd, buf, n + 4, 0) < 0);
+	return -(send(fd, buf, n + 4, flags) < 0);
 }
 
 int
-libsbus_unsubscribe(int fd, const char *pattern, char *buf)
+libsbus_unsubscribe(int fd, const char *pattern, int flags, char *buf)
 {
 	size_t n = strlen(pattern);
 	if (n + 6 > LIBSBUS_BUFFER_SIZE) {
@@ -27,11 +27,11 @@ libsbus_unsubscribe(int fd, const char *pattern, char *buf)
 	}
 	buf[0] = 'U', buf[1] = 'N', buf[2] = 'S', buf[3] = 'U', buf[4] = 'B', buf[5] = ' ';
 	memcpy(&buf[6], pattern, n);
-	return -(send(fd, buf, n + 6, 0) < 0);
+	return -(send(fd, buf, n + 6, flags) < 0);
 }
 
 int
-libsbus_publish(int fd, const char *key, const char *msg, size_t n, char *buf)
+libsbus_publish(int fd, const char *key, const char *msg, size_t n, int flags, char *buf)
 {
 	size_t len = strlen(key) + 1;
 	if (len + n > LIBSBUS_BUFFER_SIZE - 4) {
@@ -41,7 +41,7 @@ libsbus_publish(int fd, const char *key, const char *msg, size_t n, char *buf)
 	buf[0] = 'M', buf[1] = 'S', buf[2] = 'G', buf[3] = ' ';
 	memcpy(&buf[4], key, len);
 	memcpy(&buf[4 + len], msg, n);
-	return -(send(fd, buf, len + n + 4, 0) < 0);
+	return -(send(fd, buf, len + n + 4, flags) < 0);
 }
 
 ssize_t
