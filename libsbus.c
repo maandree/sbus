@@ -74,7 +74,7 @@ libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet)
 
 	if (r >= 4 && !strncmp(buf, "MSG ", 4)) {
 		p = memchr(buf, '\0', r);
-		if (!*p++)
+		if (!p++)
 			goto unknown;
 		packet->type = LIBSBUS_MESSAGE;
 		packet->message.key = &buf[4];
