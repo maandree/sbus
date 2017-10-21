@@ -4,6 +4,9 @@ Features:
 	Support for multi-user buses.
 	No support state-keeping in clients.
 	Supports all send(2)/recv(2) flags.
+	Almost full setsockopt(2)/getsockopt(2)/fcntl(2)/ioctl(2) support:
+		No send-time timestamps
+		Increasing message size limit may cause problems
 	Support for routing keys with wildcards.
 
 Non-features:
@@ -13,6 +16,9 @@ Non-features:
 	No support for automatic unsubscriptions.
 	No support for reply-to keys, should be implemented at application level.
 	No support for shared queues, should be implemented as a separate service.
+	No file descriptor passing support, not network-compatible, should be
+		implemented as a separate service or at application level.
+	No support for server-verified credentials, not network-compatible
 
 Routing keys:
 	Routing keys are used to filter received messages. A routing key
@@ -23,7 +29,8 @@ Routing keys:
 	pattern ends with '.' that '.' will match to a '.' and any
 	subsequent byte. For example 'a.*.c.' will match 'a.b.c.' and
 	'a.b.c.d.e' but not 'a.b.c' or 'a.c.d'. And empty routiung key
-	pattern shall match everything.
+	pattern shall match everything. Routing keys starting with '!'
+	are reserved.
 
 Protocol:
 	Communication is done over unix domain, sequenced-packet sockets.
