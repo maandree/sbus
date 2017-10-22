@@ -13,7 +13,7 @@ Features:
 
 Non-features:
 	No IP or cluster support, should be implemented as a separate service.
-	No support for overly larged messages, should be implemented at application level.
+	No support for overly large messages, should be implemented at application level.
 	No persistence support, should be implemented as a separate service.
 	No support for automatic unsubscriptions.
 	No support for reply-to keys, should be implemented at application level.
