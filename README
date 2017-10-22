@@ -7,6 +7,7 @@ Features:
 	Almost full setsockopt(2)/getsockopt(2)/fcntl(2)/ioctl(2) support:
 		No send-time timestamps
 		Increasing message size limit may cause problems
+	Supports select(2)/poll(2)/epoll(7).
 	Support for routing keys with wildcards.
 	Support for secret communication.
 	Reliable and ordered communication.
@@ -114,7 +115,7 @@ Secret messages:
 	to the routing key \1, \2, and \3 match it's credentials.
 	If \1, \2, or \3 are empty, they will match the clients it's
 	credentials when subscribing. However, the server will not
-	accept '*' for \1, \2, or \3, or truncated routing key.s
+	accept '*' for \1, \2, or \3, or truncated routing keys.
 
 	However, due to network support, these routing keys may need
 	to be prefixed with the credentials for the servers the message
