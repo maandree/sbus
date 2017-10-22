@@ -103,8 +103,8 @@ Protocol:
 
 Secret messages:
 	Routing keys starting with '!.cred.' can only be subscribed to
-	by clients with matching credentials. These routing keys look
-	match this regular expression
+	by clients with matching credentials. These routing keys must
+	match regular expression
 
 		^!\.cred\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\(.*\)$
 
