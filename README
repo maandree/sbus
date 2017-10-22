@@ -2,7 +2,7 @@ sbus is simple message bus based on unix domain, sequenced-packet sockets.
 
 Features:
 	Support for multi-user buses.
-	No support state-keeping in clients.
+	No state-keeping required in clients.
 	Supports all send(2)/recv(2) flags.
 	Almost full setsockopt(2)/getsockopt(2)/fcntl(2)/ioctl(2) support:
 		No send-time timestamps
