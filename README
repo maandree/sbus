@@ -9,6 +9,7 @@ Features:
 		Increasing message size limit may cause problems
 	Support for routing keys with wildcards.
 	Support for secret communication.
+	Reliable and ordered communication.
 
 Non-features:
 	No IP or cluster support, should be implemented as a separate service.
@@ -21,6 +22,9 @@ Non-features:
 		implemented as a separate service or at application level.
 	No support for server-verified credentials, can be implemented at
 		application level by using '!.cred.' routing keys.
+	No acknowledgement of when messages have been processes, can be
+		implemented at application level by sending yourself a message
+		and wait for it to return.
 
 Routing keys:
 	Routing keys are used to filter received messages. A routing key
