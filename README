@@ -28,12 +28,12 @@ Non-features:
 
 Routing keys:
 	Routing keys are used to filter received messages. A routing key
-	may contain any byte, whoever there are three bytes with special
-	meaning: '*', '.', and '!'. '*' should not be used in routing keys,
-	but only in routing key patterns, it matches until the next '.' or
-	end if there are not more '.'s. Additionally if a routing key
-	pattern ends with '.' that '.' will match to a '.' and any
-	subsequent byte. For example 'a.*.c.' will match 'a.b.c.' and
+	may contain any byte other than the NUL, whoever there are three
+	bytes with special meaning: '*', '.', and '!'. '*' should not be
+	in routing keys, but only in routing key patterns, it matches until
+	the next '.' or end if there are not more '.'s. Additionally if a
+	routing key pattern ends with '.' that '.' will match to a '.' and
+	any subsequent byte. For example 'a.*.c.' will match 'a.b.c.' and
 	'a.b.c.d.e' but not 'a.b.c' or 'a.c.d'. And empty routing key
 	pattern shall match everything. The token '!' is reserved, a client
 	should never use '!' for any other purpose than specified in the
