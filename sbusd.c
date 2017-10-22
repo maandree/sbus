@@ -175,11 +175,53 @@ is_subscribed(const struct client *cl, const char *key)
 	return 0;
 }
 
+static int
+is_subscription_acceptable(struct client *cl, const char *key)
+{
+	struct ucred cred;
+	long long int tmp;
+	const char *p;
+	if (!strncmp(key, "!.cred.", sizeof("!.cred.") - 1)) {
+		if (getsockopt(cl->fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
+			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
+			return -1;
+		}
+		errno = 0;
+		p = &key[sizeof("!.cred.") - 1];
+#define TEST_CRED(ID)\
+		if (!*p) {\
+			return 0;\
+		} else if (*p++ != '.') {\
+			if (!isdigit(*p))\
+				return 0;\
+			tmp = strtoll(p, (void *)&p, 10);\
+			if (errno || (*p && *p != '.') || (ID##_t)tmp != cred.ID)\
+				return 0;\
+		}
+		TEST_CRED(gid);
+		TEST_CRED(uid);
+		TEST_CRED(pid);
+#undef TEST_CRED
+	}
+	return 1;
+}
+
 static void
 add_subscription(struct client *cl, const char *key)
 {
 	size_t n;
 	char **new, *k;
+	switch (is_subscription_acceptable(cl, key)) {
+	case -1:
+		remove_client(cl);
+		return;
+	case 0:
+		weprintf("client subscribed unacceptable routing key\n");
+		remove_client(cl);
+		return;
+	default:
+		break;
+	}
 	if (cl->subs_siz == cl->nsubs) {
 		n = cl->subs_siz ? (cl->subs_siz << 1) : 1;
 		new = realloc(cl->subs, n * sizeof(char *));
@@ -221,6 +263,27 @@ remove_subscription(struct client *cl, const char *key)
 	}
 }
 
+static int
+send_packet(struct client *cl, const char *buf, size_t n)
+{
+	/* TODO queue instead of block */
+	return -(send(cl->fd, buf, n, 0) < 0);
+}
+
+static void
+handle_cmsg(struct client *cl, const char *msg, size_t n)
+{
+	if (!strcmp(msg, "CMSG !.cred.prefix")) {
+		n = sizeof("CMSG !.cred.prefix");
+	} else {
+		return;
+	}
+	if (send_packet(cl, msg, n)) {
+		weprintf("send <client>:");
+		remove_client(cl);
+	}
+}
+
 static void
 broadcast(const char *msg, size_t n)
 {
@@ -228,7 +291,7 @@ broadcast(const char *msg, size_t n)
 	for (; cl->next; cl = cl->next) {
 		if (!is_subscribed(cl, &msg[4]))
 			continue;
-		if (send(cl->fd, msg, n, 0) < 0) { /* TODO queue instead of block */
+		if (send_packet(cl, msg, n)) {
 			cl = (tmp = cl)->prev;
 			weprintf("send <client>:");
 			remove_client(tmp);
@@ -257,6 +320,8 @@ handle_message(struct client *cl)
 		remove_subscription(cl, &buf[6]);
 	} else if (!strncmp(buf, "SUB ", 4)) {
 		add_subscription(cl, &buf[4]);
+	} else if (!strncmp(buf, "CMSG ", 5)) {
+		handle_cmsg(cl, buf, r);
 	} else {
 		weprintf("received bad message\n");
 		remove_client(cl);

@@ -60,6 +60,20 @@ libsbuf_prepare_message(const char *key, char *buf, size_t *remaining)
 }
 
 int
+libsbus_send_cmsg(int fd, const char *key, const char *msg, size_t n, int flags, char *buf)
+{
+	size_t len = strlen(key) + 1;
+	if (len + n > LIBSBUS_BUFFER_SIZE - 5) {
+		errno = EMSGSIZE;
+		return -1;
+	}
+	buf[0] = 'C', buf[1] = 'M', buf[2] = 'S', buf[3] = 'G', buf[4] = ' ';
+	memcpy(&buf[5], key, len);
+	memcpy(&buf[5 + len], msg, n);
+	return -(send(fd, buf, len + n + 5, flags) < 0);
+}
+
+int
 libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet)
 {
 	ssize_t r;
@@ -77,6 +91,14 @@ libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet)
 		if (!p++)
 			goto unknown;
 		packet->type = LIBSBUS_MESSAGE;
+		packet->message.key = &buf[4];
+		packet->message.msg = p;
+		packet->message.n = (size_t)(r - (p - buf));
+	} else if (r >= 5 && !strncmp(buf, "CMSG ", 5)) {
+		p = memchr(buf, '\0', r);
+		if (!p++)
+			goto unknown;
+		packet->type = LIBSBUS_CONTROL_MESSAGE;
 		packet->message.key = &buf[4];
 		packet->message.msg = p;
 		packet->message.n = (size_t)(r - (p - buf));

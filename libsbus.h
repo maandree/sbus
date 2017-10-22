@@ -8,7 +8,8 @@
 
 enum libsbus_packet_type {
 	LIBSBUS_UNKNOWN,
-	LIBSBUS_MESSAGE
+	LIBSBUS_MESSAGE,
+	LIBSBUS_CONTROL_MESSAGE
 };
 
 struct libsbus_unknown {
@@ -32,6 +33,7 @@ union libsbus_packet {
 int libsbus_subscribe(int fd, const char *pattern, int flags, char *buf);
 int libsbus_unsubscribe(int fd, const char *pattern, int flags, char *buf);
 int libsbus_publish(int fd, const char *key, const char *msg, size_t n, int flags, char *buf);
+int libsbus_send_cmsg(int fd, const char *key, const char *msg, size_t n, int flags, char *buf);
 ssize_t libsbuf_prepare_message(const char *key, char *buf, size_t *remaining);
 int libsbus_receive(int fd, int flags, char *buf, union libsbus_packet *packet);
 
