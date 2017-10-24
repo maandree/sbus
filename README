@@ -22,7 +22,7 @@ Non-features:
 	No file descriptor passing support, not network-compatible, should be
 		implemented as a separate service or at application level.
 	No support for server-verified credentials, can be implemented at
-		application level by using '!.cred.' routing keys.
+		application level by using '!/cred/' routing keys.
 	No acknowledgement of when messages have been processes, can be
 		implemented at application level by sending yourself a message
 		and wait for it to return.
