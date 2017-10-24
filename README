@@ -107,7 +107,7 @@ Secret messages:
 	by clients with matching credentials. These routing keys must
 	match regular expression
 
-		^!\/cred\/\([0-9]*\)\/\([0-9]*\)\/\([0-9]*\)\/\(.*\)$
+		^!/cred/\([0-9]*\)/\([0-9]*\)/\([0-9]*\)/\(.*\)$
 
 	where \1 is the group ID, \2 is the user ID, \3 is the process
 	ID, and \4 the rest of routing key which may also use this
