@@ -120,13 +120,17 @@ Secret messages:
 
 	However, due to network support, these routing keys may need
 	to be prefixed with the credentials for the servers the message
-	goes through. This prefix can be retrieved by simply sending an
-	empty control message (CMSG) with the routing key '!/cred/prefix'
-	and the server will reply with a control message containing prefix
-	using this routing key. Note, prefix is probably the empty string,
-	as the master server do not need to add its credentials to be
-	prefixed. Note, the server will never send control messages, so
-	received control message are guaranteed to come from the server.
+	goes through, or use the credentials of the a program running
+	on a different master machine. Therefore, a client cannot
+	simply just use its GID, UID, and PID, but must ask what's its
+	credentials are by sending an empty control message (CMSG) with
+	the routing key '!/cred/whoami'. The server will reply with a
+	control message with the same routing key and the message will
+	be the credentials, for example '!/cred/100/1000/1111' or
+	'!/cred/100/1000/1111/!/cred/1000/1000/19211'. Note, the server
+	will never send control messages it receives from other clients,
+	so the received control message is guaranteed to come from the
+	server.
 
 	Example of how two client can prove their identities to each oter:
 

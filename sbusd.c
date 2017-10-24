@@ -292,36 +292,44 @@ send_packet(struct client *cl, const char *buf, size_t n)
 }
 
 static void
-handle_cmsg(struct client *cl, const char *msg, size_t n)
+handle_cmsg(struct client *cl, char *buf, size_t n)
 {
-	if (!strcmp(msg, "CMSG !/cred/prefix")) {
-		n = sizeof("CMSG !/cred/prefix");
-	} else if (!strcmp(msg, "CMSG blocking/soft/queue")) {
+	struct ucred cred;
+	if (!strcmp(buf, "CMSG !/cred/whoami")) {
+		if (getsockopt(cl->fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
+			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
+			remove_client(cl);
+			return;
+		}
+		n = sizeof("CMSG !/cred/whoami");
+		n += (size_t)sprintf(&buf[n], "!/cred/%lli/%lli/%lli",
+				     (long long int)cred.gid,
+				     (long long int)cred.uid,
+				     (long long int)cred.gid);
+		if (send_packet(cl, buf, n)) {
+			weprintf("send <client>:");
+			remove_client(cl);
+		}
+	} else if (!strcmp(buf, "CMSG blocking/soft/queue")) {
 		cl->soft_blocking_mode = BLOCKING_QUEUE;
-	} else if (!strcmp(msg, "CMSG blocking/soft/discard")) {
+	} else if (!strcmp(buf, "CMSG blocking/soft/discard")) {
 		cl->soft_blocking_mode = BLOCKING_DISCARD;
-	} else if (!strcmp(msg, "CMSG blocking/soft/block")) {
+	} else if (!strcmp(buf, "CMSG blocking/soft/block")) {
 		cl->soft_blocking_mode = BLOCKING_BLOCK;
-	} else if (!strcmp(msg, "CMSG blocking/soft/error")) {
+	} else if (!strcmp(buf, "CMSG blocking/soft/error")) {
 		cl->soft_blocking_mode = BLOCKING_ERROR;
-	} else if (!strcmp(msg, "CMSG blocking/hard/discard")) {
+	} else if (!strcmp(buf, "CMSG blocking/hard/discard")) {
 		cl->hard_blocking_mode = BLOCKING_DISCARD;
-	} else if (!strcmp(msg, "CMSG blocking/hard/block")) {
+	} else if (!strcmp(buf, "CMSG blocking/hard/block")) {
 		cl->hard_blocking_mode = BLOCKING_BLOCK;
-	} else if (!strcmp(msg, "CMSG blocking/hard/error")) {
+	} else if (!strcmp(buf, "CMSG blocking/hard/error")) {
 		cl->hard_blocking_mode = BLOCKING_ERROR;
-	} else if (!strcmp(msg, "CMSG order/queue")) {
+	} else if (!strcmp(buf, "CMSG order/queue")) {
 		cl->order = ORDER_QUEUE;
-	} else if (!strcmp(msg, "CMSG order/stack")) {
+	} else if (!strcmp(buf, "CMSG order/stack")) {
 		cl->order = ORDER_STACK;
-	} else if (!strcmp(msg, "CMSG order/random")) {
+	} else if (!strcmp(buf, "CMSG order/random")) {
 		cl->order |= ORDER_RANDOM;
-	} else {
-		return;
-	}
-	if (send_packet(cl, msg, n)) {
-		weprintf("send <client>:");
-		remove_client(cl);
 	}
 }
 
