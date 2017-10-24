@@ -258,17 +258,17 @@ check(int fd)
 	size_t i;
 
 	alarm(1);
-	assert(!libsbus_subscribe(fd, "test.", 0, buf));
+	assert(!libsbus_subscribe(fd, "test/", 0, buf));
 	assert(!libsbus_subscribe(fd, "discard", 0, buf));
 	assert(!libsbus_unsubscribe(fd, "discard", 0, buf));
 	assert(!libsbus_publish(fd, "discard", "not caught", strlen("not caught"), 0, buf));
 	for (i = 0; i < 100; i++) {
-		sprintf(key, "test.%zu", i);
+		sprintf(key, "test/%zu", i);
 		sprintf(msg, "%zu", i);
 		assert(!libsbus_publish(fd, key, msg, strlen(msg), 0, buf));
 	}
 	for (i = 0; i < 100; i++) {
-		sprintf(key, "test.%zu", i);
+		sprintf(key, "test/%zu", i);
 		sprintf(msg, "%zu", i);
 		assert(!libsbus_receive(fd, 0, buf, &packet));
 		assert(packet.type == LIBSBUS_MESSAGE);

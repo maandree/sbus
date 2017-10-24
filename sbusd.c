@@ -154,10 +154,10 @@ is_subscription_match(const char *sub, const char *key)
 		if (!*key)
 			return !*sub;
 		if (!*sub)
-			return sub == sub_start || sub[-1] == '.';
+			return sub == sub_start || sub[-1] == '/';
 		if (*sub == '*') {
 			sub++;
-			while (*key && *key != '.')
+			while (*key && *key != '/')
 				key++;
 			continue;
 		}
@@ -181,21 +181,21 @@ is_subscription_acceptable(struct client *cl, const char *key)
 	struct ucred cred;
 	long long int tmp;
 	const char *p;
-	if (!strncmp(key, "!.cred.", sizeof("!.cred.") - 1)) {
+	if (!strncmp(key, "!/cred/", sizeof("!/cred/") - 1)) {
 		if (getsockopt(cl->fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
 			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
 			return -1;
 		}
 		errno = 0;
-		p = &key[sizeof("!.cred.") - 1];
+		p = &key[sizeof("!/cred/") - 1];
 #define TEST_CRED(ID)\
 		if (!*p) {\
 			return 0;\
-		} else if (*p++ != '.') {\
+		} else if (*p++ != '/') {\
 			if (!isdigit(*p))\
 				return 0;\
 			tmp = strtoll(p, (void *)&p, 10);\
-			if (errno || (*p && *p != '.') || (ID##_t)tmp != cred.ID)\
+			if (errno || (*p && *p != '/') || (ID##_t)tmp != cred.ID)\
 				return 0;\
 		}
 		TEST_CRED(gid);
@@ -273,8 +273,8 @@ send_packet(struct client *cl, const char *buf, size_t n)
 static void
 handle_cmsg(struct client *cl, const char *msg, size_t n)
 {
-	if (!strcmp(msg, "CMSG !.cred.prefix")) {
-		n = sizeof("CMSG !.cred.prefix");
+	if (!strcmp(msg, "CMSG !/cred/prefix")) {
+		n = sizeof("CMSG !/cred/prefix");
 	} else {
 		return;
 	}

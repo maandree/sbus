@@ -30,15 +30,15 @@ Non-features:
 Routing keys:
 	Routing keys are used to filter received messages. A routing key
 	may contain any byte other than the NUL, whoever there are three
-	bytes with special meaning: '*', '.', and '!'. '*' should not be
+	bytes with special meaning: '*', '/', and '!'. '*' should not be
 	in routing keys, but only in routing key patterns, it matches until
-	the next '.' or end if there are not more '.'s. Additionally if a
-	routing key pattern ends with '.' that '.' will match to a '.' and
-	any subsequent byte. For example 'a.*.c.' will match 'a.b.c.' and
-	'a.b.c.d.e' but not 'a.b.c' or 'a.c.d'. And empty routing key
+	the next '/' or end if there are not more '/'s. Additionally if a
+	routing key pattern ends with '/' that '/' will match to a '/' and
+	any subsequent byte. For example 'a/*/c/' will match 'a/b/c/' and
+	'a/b/c/d/e' but not 'a/b/c' or 'a/c/d'. And empty routing key
 	pattern shall match everything. The token '!' is reserved, a client
 	should never use '!' for any other purpose than specified in the
-	protocol, unless it has an other byte than a '.' next to it. The
+	protocol, unless it has an other byte than a '/' next to it. The
 	server may choose to disconnect a client using '!' in an invalid
 	way or simply ignore such messages.
 
@@ -103,11 +103,11 @@ Protocol:
 		sent by the client.
 
 Secret messages:
-	Routing keys starting with '!.cred.' can only be subscribed to
+	Routing keys starting with '!/cred/' can only be subscribed to
 	by clients with matching credentials. These routing keys must
 	match regular expression
 
-		^!\.cred\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\(.*\)$
+		^!\/cred\/\([0-9]*\)\/\([0-9]*\)\/\([0-9]*\)\/\(.*\)$
 
 	where \1 is the group ID, \2 is the user ID, \3 is the process
 	ID, and \4 the rest of routing key which may also use this
@@ -120,7 +120,7 @@ Secret messages:
 	However, due to network support, these routing keys may need
 	to be prefixed with the credentials for the servers the message
 	goes through. This prefix can be retrieved by simply sending an
-	empty control message (CMSG) with the routing key '!.cred.prefix'
+	empty control message (CMSG) with the routing key '!/cred/prefix'
 	and the server will reply with a control message containing prefix
 	using this routing key. Note, prefix is probably the empty string,
 	as the master server do not need to add its credentials to be
