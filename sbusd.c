@@ -24,8 +24,26 @@
 #define STYPE_MAX(T) (long long int)((1ULL << (8 * sizeof(T) - 1)) - 1)
 #define eprintf(...) (weprintf(__VA_ARGS__), exit(1))
 
+enum blocking_mode {
+	BLOCKING_QUEUE,
+	BLOCKING_DISCARD,
+	BLOCKING_BLOCK,
+	BLOCKING_ERROR
+};
+
+enum order {
+	ORDER_QUEUE = 0,
+	ORDER_STACK = 1,
+	ORDER_RANDOM_QUEUE = 2,
+	ORDER_RANDOM_STACK = 3,
+};
+#define ORDER_RANDOM 2
+
 struct client {
 	int fd;
+	enum blocking_mode soft_blocking_mode;
+	enum blocking_mode hard_blocking_mode;
+	enum order order;
 	char **subs;
 	size_t nsubs;
 	size_t subs_siz;
@@ -84,6 +102,9 @@ add_client(int fd)
 	if (!cl)
 		return NULL;
 	cl->fd = fd;
+	cl->soft_blocking_mode = BLOCKING_QUEUE;
+	cl->hard_blocking_mode = BLOCKING_DISCARD;
+	cl->order = ORDER_RANDOM_QUEUE;
 	cl->subs = NULL;
 	cl->nsubs = 0;
 	cl->subs_siz = 0;
@@ -266,7 +287,7 @@ remove_subscription(struct client *cl, const char *key)
 static int
 send_packet(struct client *cl, const char *buf, size_t n)
 {
-	/* TODO queue instead of block */
+	/* TODO honour cl->soft_blocking_mode, cl->hard_blocking_mode, and cl->order */
 	return -(send(cl->fd, buf, n, 0) < 0);
 }
 
@@ -275,6 +296,26 @@ handle_cmsg(struct client *cl, const char *msg, size_t n)
 {
 	if (!strcmp(msg, "CMSG !/cred/prefix")) {
 		n = sizeof("CMSG !/cred/prefix");
+	} else if (!strcmp(msg, "CMSG blocking/soft/queue")) {
+		cl->soft_blocking_mode = BLOCKING_QUEUE;
+	} else if (!strcmp(msg, "CMSG blocking/soft/discard")) {
+		cl->soft_blocking_mode = BLOCKING_DISCARD;
+	} else if (!strcmp(msg, "CMSG blocking/soft/block")) {
+		cl->soft_blocking_mode = BLOCKING_BLOCK;
+	} else if (!strcmp(msg, "CMSG blocking/soft/error")) {
+		cl->soft_blocking_mode = BLOCKING_ERROR;
+	} else if (!strcmp(msg, "CMSG blocking/hard/discard")) {
+		cl->hard_blocking_mode = BLOCKING_DISCARD;
+	} else if (!strcmp(msg, "CMSG blocking/hard/block")) {
+		cl->hard_blocking_mode = BLOCKING_BLOCK;
+	} else if (!strcmp(msg, "CMSG blocking/hard/error")) {
+		cl->hard_blocking_mode = BLOCKING_ERROR;
+	} else if (!strcmp(msg, "CMSG order/queue")) {
+		cl->order = ORDER_QUEUE;
+	} else if (!strcmp(msg, "CMSG order/stack")) {
+		cl->order = ORDER_STACK;
+	} else if (!strcmp(msg, "CMSG order/random")) {
+		cl->order |= ORDER_RANDOM;
 	} else {
 		return;
 	}

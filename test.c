@@ -355,3 +355,4 @@ main(void)
 
 /* TODO untested sbusd flags: -p[/dev/null] (-f) -u */
 /* TODO test credentials */
+/* TODO test CMSG server */

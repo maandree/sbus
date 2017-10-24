@@ -133,3 +133,62 @@ Secret messages:
 		B: Send B's credentials with routing key private to A.
 		A: Send a random message with routing key private to B.
 		B: Send back the message with routing key private to A.
+
+Flood control:
+	The following control messages can be sent to the server to
+	choose the server behaviour when messages cannot be delivered
+	without blocking. All control messages are optional and server
+	may choose to ignore them at any time, even if previously
+	honoured. Most recently sent control message that precedence.
+
+	^CMSG blocking/soft/queue\(\x00.*\)*$
+
+		Delivering is preferable, the server should queue up
+		message that cannot be sent.
+
+	^CMSG blocking/soft/discard\(\x00.*\)*$
+
+		Delivering is unimportant, the server should discard
+		message that cannot be sent.
+
+	^CMSG blocking/soft/block\(\x00.*\)*$
+
+		Delivering is important, the server may block communication
+		to guarantee that messages are delivered.
+
+	^CMSG blocking/soft/error\(\x00.*\)*$
+
+		The server may treat a client as misbehaving if message
+		cannot be sent.
+
+	^CMSG blocking/hard/discard\(\x00.*\)*$
+
+		If the server has queued up too many message it should
+		start discarding new message instead of queuing them.
+
+	^CMSG blocking/hard/block\(\x00.*\)*$
+
+		If the server has queued up too many message it should
+		start blocking communication until it can start queuing
+		messages again.
+
+	^CMSG blocking/hard/error\(\x00.*\)*$
+
+		If the server has queued up too many message it should
+		start treating clients that are blocking as misbehaving.
+
+	^CMSG order/queue\(\x00.*\)*$
+
+		If the client is blocking it is preferable that messages
+		are sent in order.
+
+	^CMSG order/stack\(\x00.*\)*$
+
+		If the client is blocking it is preferable that messages
+		are sent in reverse order.
+
+	^CMSG order/random\(\x00.*\)*$
+
+		If the client is blocking it is preferable that messages
+		are sent in such order that memory is freed up as fast
+		as possible.
