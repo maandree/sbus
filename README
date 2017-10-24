@@ -26,6 +26,7 @@ Non-features:
 	No acknowledgement of when messages have been processes, can be
 		implemented at application level by sending yourself a message
 		and wait for it to return.
+	No remote procedure call support.
 
 Routing keys:
 	Routing keys are used to filter received messages. A routing key
