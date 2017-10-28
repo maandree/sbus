@@ -351,7 +351,7 @@ broadcast(const char *msg, size_t n)
 static void
 handle_message(struct client *cl)
 {
-	static char buf[3 << 17];
+	static char buf[409600 + 1];
 	int fd = cl->fd;
 	ssize_t r;
 

@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 
-#define LIBSBUS_BUFFER_SIZE ((3UL << 17) - 1UL)
+#define LIBSBUS_BUFFER_SIZE 409600
 
 enum libsbus_packet_type {
 	LIBSBUS_UNKNOWN,
