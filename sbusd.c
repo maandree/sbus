@@ -1,6 +1,5 @@
 /* See LICENSE file for copyright and license details. */
 #include <sys/epoll.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -15,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stropts.h>
 #include <time.h>
 #include <unistd.h>
 
