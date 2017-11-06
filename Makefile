@@ -8,10 +8,11 @@ include $(CONFIGFILE)
 
 all: sbusd libsbus.so libsbus.a test
 
-sbusd.o: arg.h
+sbusd.o: arg.h libsbusd.h
 libsbus.o: libsbus.h
 test.o: libsbus.h
 test: test.o libsbus.a
+sbusd: sbusd.o libsbusd.o
 
 libsbus.so: libsbus.o
 	$(CC) -shared -Wl,-soname,libsbus.so.$(LIB_MAJOR) -o $@ $^ $(LDFLAGS)
