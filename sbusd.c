@@ -84,10 +84,7 @@ add_client(int fd)
 	cl->subs = NULL;
 	cl->nsubs = 0;
 	cl->subs_siz = 0;
-	cl->next = &tail;
-	cl->prev = tail.prev;
-	tail.prev->next = cl;
-	tail.prev = cl;
+	DLLIST_ADD_BEFORE(cl, &tail);
 	return cl;
 }
 
@@ -95,8 +92,7 @@ static void
 remove_client(struct client *cl)
 {
 	close(cl->fd);
-	cl->prev->next = cl->next;
-	cl->next->prev = cl->prev;
+	DLLIST_REMOVE(cl);
 	while (cl->nsubs--)
 		free(cl->subs[cl->nsubs]);
 	free(cl->subs);
@@ -106,27 +102,9 @@ remove_client(struct client *cl)
 static void
 accept_client(int fd)
 {
-	struct ucred cred;
 	struct epoll_event ev;
-	size_t i;
-	if (fd < 0) {
-		weprintf("accept <server>:");
+	if (libsbusd_checkuser(fd, users, nusers))
 		return;
-	}
-	if (nusers) {
-		if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
-			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
-			close(fd);
-			return;
-		}
-		for (i = nusers; i--;)
-			if (users[i] == cred.uid)
-				goto cred_ok;
-		weprintf("rejected connection from user %li\n", (long int)cred.uid);
-		close(fd);
-		return;
-	}
-cred_ok:
 	ev.events = EPOLLIN | EPOLLRDHUP;
 	ev.data.ptr = add_client(fd);
 	if (!ev.data.ptr) {
@@ -142,31 +120,8 @@ cred_ok:
 static int
 is_subscription_acceptable(struct client *cl, const char *key)
 {
-	struct ucred cred;
-	long long int tmp;
-	const char *p;
-	if (!strncmp(key, "!/cred/", sizeof("!/cred/") - 1)) {
-		if (getsockopt(cl->fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
-			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
-			return -1;
-		}
-		errno = 0;
-		p = &key[sizeof("!/cred/") - 1];
-#define TEST_CRED(ID)\
-		if (!*p) {\
-			return 0;\
-		} else if (*p++ != '/') {\
-			if (!isdigit(*p))\
-				return 0;\
-			tmp = strtoll(p, (void *)&p, 10);\
-			if (errno || (*p && *p != '/') || (ID##_t)tmp != cred.ID)\
-				return 0;\
-		}
-		TEST_CRED(gid);
-		TEST_CRED(uid);
-		TEST_CRED(pid);
-#undef TEST_CRED
-	}
+	if (!strncmp(key, "!/cred/", sizeof("!/cred/") - 1))
+		return libsbusd_iscredok(cl->fd, key, "");
 	return 1;
 }
 
@@ -237,18 +192,14 @@ send_packet(struct client *cl, const char *buf, size_t n)
 static void
 handle_cmsg(struct client *cl, char *buf, size_t n)
 {
-	struct ucred cred;
+	int r;
 	if (!strcmp(buf, "CMSG !/cred/whoami")) {
-		if (getsockopt(cl->fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
-			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
+		n = sizeof("CMSG !/cred/whoami");
+		n += (size_t)(r = libsbusd_who(cl->fd, &buf[n], ""));
+		if (r < 0) {
 			remove_client(cl);
 			return;
 		}
-		n = sizeof("CMSG !/cred/whoami");
-		n += (size_t)sprintf(&buf[n], "!/cred/%lli/%lli/%lli",
-				     (long long int)cred.gid,
-				     (long long int)cred.uid,
-				     (long long int)cred.pid);
 		if (send_packet(cl, buf, n)) {
 			weprintf("send <client>:");
 			remove_client(cl);

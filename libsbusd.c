@@ -41,6 +41,81 @@ libsbusd_weprintf(const char *fmt, ...)
 }
 
 int
+libsbusd_who(int fd, char *buf, const char *prefix)
+{
+	struct ucred cred;
+	if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
+		weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
+		return -1;
+	}
+	return sprintf(buf, "%s!/cred/%lli/%lli/%lli",
+	               prefix,
+	               (long long int)cred.gid,
+	               (long long int)cred.uid,
+	               (long long int)cred.pid);
+}
+
+int
+libsbusd_iscredok(int fd, const char *key, const char *prefix)
+{
+	struct ucred cred;
+	long long int tmp;
+	const char *p;
+	size_t n = strlen(prefix);
+	if (strncmp(key, prefix, n))
+		return 0;
+	key = &key[n];
+	if (strncmp(key, "!/cred/", sizeof("!/cred/") - 1))
+		return 0;
+	if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
+		weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
+		return -1;
+	}
+	errno = 0;
+	p = &key[sizeof("!/cred/") - 1];
+#define TEST_CRED(ID)\
+	if (!*p) {\
+		return 0;\
+	} else if (*p++ != '/') {\
+		if (!isdigit(*p))\
+			return 0;\
+		tmp = strtoll(p, (void *)&p, 10);\
+		if (errno || (*p && *p != '/') || (ID##_t)tmp != cred.ID)\
+			return 0;\
+	}
+	TEST_CRED(gid);
+	TEST_CRED(uid);
+	TEST_CRED(pid);
+#undef TEST_CRED
+	return 1;
+}
+
+int
+libsbusd_checkuser(int fd, uid_t *users, size_t nusers)
+{
+	struct ucred cred;
+	size_t i;
+	if (fd < 0) {
+		weprintf("accept <server>:");
+		return -1;
+	}
+	if (nusers) {
+		if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &(socklen_t){sizeof(cred)}) < 0) {
+			weprintf("getsockopt <client> SOL_SOCKET SO_PEERCRED:");
+			close(fd);
+			return -1;
+		}
+		for (i = nusers; i--;)
+			if (users[i] == cred.uid)
+				return 0;
+		weprintf("rejected connection from user %li\n", (long int)cred.uid);
+		close(fd);
+		return -1;
+	}
+	return 0;
+}
+
+int
 libsbusd_doessubmatch(const char *sub, const char *key)
 {
 	const char *sub_start = sub;
