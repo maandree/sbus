@@ -197,3 +197,20 @@ Flood control:
 		If the client is blocking it is preferable that messages
 		are sent in such order that memory is freed up as fast
 		as possible.
+
+Echos:
+	By default, if a client sends a message with a routing key it is
+	subscribed to, that client will receive that message. The server
+	may however choose to implement control messages for selecting
+	whether this happens. Disabling echoing is useful for implementing
+	slave servers that only send messages upwords in the server
+	hierarchy when necessary. The control messages for controlling
+	echoing are
+
+	^CMSG echo/off\(\x00.*\)*$
+
+		Disable echoing.
+
+	^CMSG echo/on\(\x00.*\)*$
+
+		Reenable echoing.

@@ -28,11 +28,16 @@ enum order {
 };
 #define ORDER_RANDOM 2
 
+enum client_flags {
+	ECHO_OFF = 1
+};
+
 struct client {
 	int fd;
 	enum blocking_mode soft_blocking_mode;
 	enum blocking_mode hard_blocking_mode;
 	enum order order;
+	enum client_flags flags;
 	char **subs;
 	size_t nsubs;
 	size_t subs_siz;
@@ -49,6 +54,7 @@ static struct sockaddr_un addr;
 static uid_t *users;
 static size_t nusers = 0;
 static const char *pidfile = "/run/sbus.pid";
+static const char *credprefix = "";
 
 static void
 usage(void)
@@ -81,6 +87,7 @@ add_client(int fd)
 	cl->soft_blocking_mode = BLOCKING_QUEUE;
 	cl->hard_blocking_mode = BLOCKING_DISCARD;
 	cl->order = ORDER_RANDOM_QUEUE;
+	cl->flags = 0;
 	cl->subs = NULL;
 	cl->nsubs = 0;
 	cl->subs_siz = 0;
@@ -121,7 +128,7 @@ static int
 is_subscription_acceptable(struct client *cl, const char *key)
 {
 	if (!strncmp(key, "!/cred/", sizeof("!/cred/") - 1))
-		return libsbusd_iscredok(cl->fd, key, "");
+		return libsbusd_iscredok(cl->fd, key, credprefix);
 	return 1;
 }
 
@@ -195,7 +202,7 @@ handle_cmsg(struct client *cl, char *buf, size_t n)
 	int r;
 	if (!strcmp(buf, "CMSG !/cred/whoami")) {
 		n = sizeof("CMSG !/cred/whoami");
-		n += (size_t)(r = libsbusd_who(cl->fd, &buf[n], ""));
+		n += (size_t)(r = libsbusd_who(cl->fd, &buf[n], credprefix));
 		if (r < 0) {
 			remove_client(cl);
 			return;
@@ -224,14 +231,20 @@ handle_cmsg(struct client *cl, char *buf, size_t n)
 		cl->order = ORDER_STACK;
 	} else if (!strcmp(buf, "CMSG order/random")) {
 		cl->order |= ORDER_RANDOM;
+	} else if (!strcmp(buf, "CMSG echo/off")) {
+		cl->flags |= ECHO_OFF;
+	} else if (!strcmp(buf, "CMSG echo/on")) {
+		cl->flags &= ~ECHO_OFF;
 	}
 }
 
 static void
-broadcast(const char *msg, size_t n)
+broadcast(const char *msg, size_t n, struct client *ignore)
 {
 	struct client *cl = head.next, *tmp;
 	for (; cl->next; cl = cl->next) {
+		if (cl == ignore)
+			continue;
 		if (!libsbusd_issubed(cl->subs, cl->nsubs, &msg[4]))
 			continue;
 		if (send_packet(cl, msg, n)) {
@@ -258,7 +271,7 @@ handle_message(struct client *cl)
 	buf[r] = '\0';
 
 	if (!strncmp(buf, "MSG ", 4)) {
-		broadcast(buf, r);
+		broadcast(buf, r, (cl->flags & ECHO_OFF) ? cl : NULL);
 	} else if (!strncmp(buf, "UNSUB ", 6)) {
 		remove_subscription(cl, &buf[6]);
 	} else if (!strncmp(buf, "SUB ", 4)) {
