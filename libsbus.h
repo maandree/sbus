@@ -6,6 +6,20 @@
 
 #define LIBSBUS_BUFFER_SIZE 409600
 
+#define LIBSBUS_CMSG_WHOAMI                "!/cred/whoami",         NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_SOFT_QUEUE   "blocking/soft/queue",   NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_SOFT_DISCARD "blocking/soft/discard", NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_SOFT_BLOCK   "blocking/soft/block",   NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_SOFT_ERROR   "blocking/soft/error",   NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_HARD_DISCARD "blocking/hard/discard", NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_HARD_BLOCK   "blocking/hard/block",   NULL, 0
+#define LIBSBUS_CMSG_BLOCKING_HARD_ERROR   "blocking/hard/error",   NULL, 0
+#define LIBSBUS_CMSG_ORDER_QUEUE           "order/queue",           NULL, 0
+#define LIBSBUS_CMSG_ORDER_STACK           "order/stack",           NULL, 0
+#define LIBSBUS_CMSG_ORDER_RANDOM          "order/random",          NULL, 0
+#define LIBSBUS_CMSG_ECHO_OFF              "echo/off",              NULL, 0
+#define LIBSBUS_CMSG_ECHO_ON               "echo/on",               NULL, 0
+
 enum libsbus_packet_type {
 	LIBSBUS_UNKNOWN,
 	LIBSBUS_MESSAGE,
